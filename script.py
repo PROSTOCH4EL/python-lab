@@ -10,7 +10,6 @@ class Movie:
     def show(self) -> None:
         print(self.title, "-", self.duration, "хв | вік:", str(self.age_limit) + "+")
 
-
 class Customer:
     def __init__(self, name: str, age: int, balance: float):
         self.name = name
@@ -23,7 +22,6 @@ class Customer:
 
     def show(self) -> None:
         print(self.name, "| вік:", self.age, "| баланс:", self.balance, "грн")
-
 
 class Session:
     def __init__(self, movie: Movie, price: float, seats: int):
@@ -47,7 +45,6 @@ class Session:
             print("Місце", seat_number, "-", status)
             seat_number += 1
 
-
 class Ticket:
     def __init__(self, movie: str, owner: str, seat: int, price: float):
         self.movie = movie
@@ -66,7 +63,6 @@ class Ticket:
 
     def use(self) -> None:
         self.used = True
-
 
 class Cinema:
     def __init__(self, name: str):
@@ -128,7 +124,6 @@ class Cinema:
         print("Продано квитків:", len(self.tickets))
         print("Дохід:", income, "грн")
 
-
 spiderman = Movie("Людина-павук", 148, 12)
 shrek = Movie("Шрек", 90, 0)
 joker = Movie("Джокер", 122, 18)
@@ -147,7 +142,6 @@ cinema.customers = {
     "Макс": Customer("Макс", 16, 400.0)
 }
 
-
 print("=== Фільми ===")
 
 for current_session in cinema.sessions:
@@ -161,12 +155,10 @@ for current_session in cinema.sessions:
 
     print()
 
-
 print("=== Клієнти ===")
 
 for current_customer in cinema.customers.values():
     current_customer.show()
-
 
 print("\n=== Покупки ===")
 
@@ -174,24 +166,20 @@ cinema.buy("Денис", 0)
 cinema.buy("Саша", 1)
 cinema.buy("Макс", 2)
 
-
 print("\n=== Квитки ===")
 
 for current_ticket in cinema.tickets:
     current_ticket.show()
 
-
 print("\n=== Місця на Людину-павука ===")
 cinema.sessions[0].show_seats()
-
 
 print("\n=== Місця на Шрека ===")
 cinema.sessions[1].show_seats()
 
-
 print("\n=== Місця на Джокера ===")
 cinema.sessions[2].show_seats()
 
-
 print("\n--- Звіт ---")
 cinema.report()
+
