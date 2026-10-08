@@ -1,185 +1,374 @@
-class Movie:
-    def __init__(self, title: str, duration: int, age_limit: int):
-        self.title = title
-        self.duration = duration
-        self.age_limit = age_limit
 
-    def is_long(self) -> bool:
-        return self.duration >= 120
+from __future__ import annotations
 
-    def show(self) -> None:
-        print(self.title, "-", self.duration, "хв | вік:", str(self.age_limit) + "+")
+
+class Car:
+    def __init__(self, brand: str, model: str, year: int, price: float, condition: str) -> None:
+        self.brand = brand
+        self.model = model
+        self.year = year
+        self.price = float(price)
+        self.condition = condition
+        self.sold = False
+        self.features: set[str] = set()
+        self.history: list[str] = []
+
+    def add_feature(self, feature: str) -> None:
+        self.features.add(feature)
+
+    def apply_discount(self, percent: float) -> None:
+        if not 0 <= percent <= 100:
+            print("Знижка має бути від 0 до 100%")
+            return
+
+        old_price = self.price
+        self.price = round(self.price * (1 - percent / 100), 2)
+        self.history.append(f"Знижка {percent:g}%")
+        print(f"{self.brand} {self.model}: {old_price:.0f} -> {self.price:.0f} грн")
+
+    def show_info(self) -> None:
+        print(f"{self.brand} {self.model} ({self.year}) — {self.price:.0f} грн")
+        print(f"Стан: {self.condition}")
+
+        for feature in sorted(self.features):
+            print(f"  + {feature}")
+
 
 class Customer:
-    def __init__(self, name: str, age: int, balance: float):
+    def __init__(self, name: str, age: int, balance: float) -> None:
         self.name = name
         self.age = age
-        self.balance = balance
-        self.tickets = []
+        self.balance = float(balance)
+        self.vip = False
+        self.cars: list[Car] = []
+        self.payments: dict[str, float] = {}
+        self.favorites: set[str] = set()
+
+    def add_favorite(self, brand: str) -> None:
+        self.favorites.add(brand)
 
     def can_buy(self, price: float) -> bool:
-        return self.balance >= price
+        return self.age >= 18 and self.balance >= price
 
-    def show(self) -> None:
-        print(self.name, "| вік:", self.age, "| баланс:", self.balance, "грн")
+    def buy_car(self, car: Car) -> None:
+        self.balance -= car.price
+        self.cars.append(car)
+        self.payments[f"{car.brand} {car.model}"] = car.price
 
-class Session:
-    def __init__(self, movie: Movie, price: float, seats: int):
-        self.movie = movie
-        self.price = price
-        self.seats = seats
-        self.busy = []
+    def show_info(self) -> None:
+        print(f"{self.name} ({self.age} років), баланс: {self.balance:.0f} грн")
 
-    def free_seats(self) -> int:
-        return self.seats - len(self.busy)
+        for car in self.cars:
+            print(f"  Куплено: {car.brand} {car.model}")
 
-    def show_seats(self) -> None:
-        seat_number = 1
+        if self.favorites:
+            print("  Улюблені марки:", ", ".join(sorted(self.favorites)))
 
-        while seat_number <= self.seats:
-            if seat_number in self.busy:
-                status = "зайняте"
-            else:
-                status = "вільне"
 
-            print("Місце", seat_number, "-", status)
-            seat_number += 1
-
-class Ticket:
-    def __init__(self, movie: str, owner: str, seat: int, price: float):
-        self.movie = movie
-        self.owner = owner
-        self.seat = seat
-        self.price = price
-        self.used = False
-
-    def show(self) -> None:
-        print(
-            self.movie,
-            "| власник:", self.owner,
-            "| місце:", self.seat,
-            "| ціна:", self.price, "грн"
-        )
-
-    def use(self) -> None:
-        self.used = True
-
-class Cinema:
-    def __init__(self, name: str):
+class Dealer:
+    def __init__(self, name: str, salary: float) -> None:
         self.name = name
-        self.sessions: list[Session] = []
+        self.salary = float(salary)
+        self.sales_count = 0
+        self.active = True
+        self.sales: list[Sale] = []
+        self.customers: set[str] = set()
+        self.bonuses: dict[int, float] = {}
+
+    def add_sale(self, sale: Sale) -> None:
+        self.sales.append(sale)
+        self.sales_count += 1
+        self.customers.add(sale.customer.name)
+        self.bonuses[sale.number] = sale.price * 0.01
+
+    def total_bonus(self) -> float:
+        total = 0.0
+
+        for bonus in self.bonuses.values():
+            total += bonus
+
+        return total
+
+    def show_info(self) -> None:
+        print(f"Продавець: {self.name}, продажів: {self.sales_count}")
+
+        for sale in self.sales:
+            print(f"  {sale.car.brand} {sale.car.model}")
+
+        print(f"Бонуси: {self.total_bonus():.0f} грн")
+
+
+class Garage:
+    def __init__(self, capacity: int) -> None:
+        self.name = "AutoCity Garage"
+        self.capacity = capacity
+        self.repair_price = 5000.0
+        self.opened = True
+        self.queue: list[Car] = []
+        self.records: dict[str, str] = {}
+        self.brands: set[str] = set()
+
+    def add_car(self, car: Car) -> bool:
+        if not self.opened or len(self.queue) >= self.capacity or car in self.queue:
+            print("Не вдалося додати автомобіль у гараж")
+            return False
+
+        self.queue.append(car)
+        self.brands.add(car.brand)
+        print(f"{car.brand} {car.model} додано в гараж")
+        return True
+
+    def finish_repair(self, car: Car) -> None:
+        if car in self.queue:
+            self.queue.remove(car)
+            self.records[f"{car.brand} {car.model}"] = "Відремонтовано"
+
+    def show_queue(self) -> None:
+        print("\n=== ЧЕРГА НА РЕМОНТ ===")
+
+        if not self.queue:
+            print("Черга порожня")
+
+        for car in self.queue:
+            print(f"{car.brand} {car.model}")
+
+
+class Mechanic:
+    def __init__(self, name: str) -> None:
+        self.name = name
+        self.experience = 5
+        self.salary = 25000.0
+        self.available = True
+        self.repairs: list[Car] = []
+        self.skills: set[str] = {"Двигун", "Гальма"}
+        self.work_log: dict[str, float] = {}
+
+    def add_skill(self, skill: str) -> None:
+        self.skills.add(skill)
+
+    def repair(self, car: Car, garage: Garage) -> None:
+        if car not in garage.queue or not self.available:
+            print("Ремонт зараз неможливий")
+            return
+
+        car.condition = "Хороший"
+        car.history.append("Ремонт")
+        self.repairs.append(car)
+        self.work_log[f"{car.brand} {car.model}"] = garage.repair_price
+
+        garage.finish_repair(car)
+        print(f"{self.name} відремонтував {car.brand} {car.model}")
+
+    def show_info(self) -> None:
+        print(f"Механік: {self.name}, ремонтів: {len(self.repairs)}")
+
+        for car in self.repairs:
+            print(f"  {car.brand} {car.model}")
+
+
+class Sale:
+    def __init__(self, number: int, car: Car, customer: Customer, dealer: Dealer) -> None:
+        self.number = number
+        self.car = car
+        self.customer = customer
+        self.dealer = dealer
+        self.price = car.price
+        self.completed = True
+        self.services: list[str] = []
+        self.details: dict[str, str] = {}
+        self.tags: set[str] = set()
+
+    def add_service(self, service: str) -> None:
+        self.services.append(service)
+        self.tags.add("Додаткова послуга")
+
+    def make_receipt(self) -> None:
+        self.details = {
+            "Автомобіль": f"{self.car.brand} {self.car.model}",
+            "Покупець": self.customer.name,
+            "Продавець": self.dealer.name,
+            "Ціна": f"{self.price:.0f} грн",
+        }
+
+    def show_receipt(self) -> None:
+        print(f"\n--- ЧЕК №{self.number} ---")
+
+        for key, value in self.details.items():
+            print(f"{key}: {value}")
+
+        for service in self.services:
+            print(f"Послуга: {service}")
+
+
+class Showroom:
+    def __init__(self, name: str) -> None:
+        self.name = name
+        self.capacity = 10
+        self.revenue = 0.0
+        self.opened = True
+        self.cars: list[Car] = []
+        self.sales: list[Sale] = []
         self.customers: dict[str, Customer] = {}
-        self.tickets: list[Ticket] = []
+        self.brands: set[str] = set()
 
-    def buy(self, name: str, session_index: int) -> bool:
-        customer = self.customers[name]
-        selected_session = self.sessions[session_index]
+    def add_car(self, car: Car) -> None:
+        if len(self.cars) >= self.capacity or car in self.cars:
+            print("Немає місця або автомобіль уже доданий")
+            return
 
-        if customer.age < selected_session.movie.age_limit:
+        self.cars.append(car)
+        self.brands.add(car.brand)
+
+    def show_cars(self) -> None:
+        print("\n=== АВТОМОБІЛІ В ПРОДАЖУ ===")
+
+        for car in self.cars:
+            if not car.sold:
+                car.show_info()
+                print()
+
+    def sell_car(self, car: Car, customer: Customer, dealer: Dealer) -> bool:
+        if not self.opened or not dealer.active:
+            print("Автосалон або продавець недоступні")
+            return False
+
+        if car not in self.cars:
             print(
-                name,
-                "- відмова, потрібен вік",
-                str(selected_session.movie.age_limit) + "+"
+                f"{customer.name} хотів купити {car.brand} {car.model}, "
+                f"але автомобіля немає в салоні"
             )
             return False
 
-        if not customer.can_buy(selected_session.price):
-            print(name, "- не вистачає грошей")
+        if car.sold:
+            print(
+                f"{customer.name} хотів купити {car.brand} {car.model}, "
+                f"але автомобіль уже продано"
+            )
             return False
 
-        if selected_session.free_seats() == 0:
-            print(name, "- немає вільних місць")
+        if car.condition != "Хороший":
+            print(
+                f"{customer.name} хотів купити {car.brand} {car.model}, "
+                f"але автомобіль потребує ремонту"
+            )
             return False
 
-        seat = len(selected_session.busy) + 1
+        if customer.age < 18:
+            print(
+                f"{customer.name} хотів купити {car.brand} {car.model}, "
+                f"але покупка недоступна за віком ({customer.age} років)"
+            )
+            return False
 
-        new_ticket = Ticket(
-            selected_session.movie.title,
-            name,
-            seat,
-            selected_session.price
-        )
+        if not customer.can_buy(car.price):
+            print(
+                f"{customer.name} хотів купити {car.brand} {car.model}, "
+                f"але недостатньо грошей"
+            )
+            return False
 
-        customer.balance -= selected_session.price
-        customer.tickets.append(new_ticket)
-        selected_session.busy.append(seat)
-        self.tickets.append(new_ticket)
+        sale = Sale(len(self.sales) + 1, car, customer, dealer)
+        sale.add_service("Оформлення документів")
+        sale.make_receipt()
 
-        print(
-            name,
-            "купив",
-            selected_session.movie.title,
-            "| місце:", seat,
-            "| ціна:", selected_session.price, "грн"
-        )
+        customer.buy_car(car)
+        car.sold = True
+        self.sales.append(sale)
+        dealer.add_sale(sale)
+        self.revenue += sale.price
+        self.customers[customer.name] = customer
 
+        print(f"{customer.name} купив {car.brand} {car.model}")
         return True
 
     def report(self) -> None:
-        income = 0.0
+        print("\n=== ЗВІТ АВТОСАЛОНУ ===")
+        print("Продано машин:", len(self.sales))
+        print(f"Виручка: {self.revenue:.0f} грн")
 
-        for report_ticket in self.tickets:
-            income += report_ticket.price
+        available = 0
 
-        print("Продано квитків:", len(self.tickets))
-        print("Дохід:", income, "грн")
+        for car in self.cars:
+            if not car.sold:
+                available += 1
 
-spiderman = Movie("Людина-павук", 148, 12)
-shrek = Movie("Шрек", 90, 0)
-joker = Movie("Джокер", 122, 18)
+        print("Залишилося машин:", available)
 
-cinema = Cinema("Cinema City")
+        for sale in self.sales:
+            sale.show_receipt()
 
-cinema.sessions = [
-    Session(spiderman, 150.0, 5),
-    Session(shrek, 100.0, 5),
-    Session(joker, 170.0, 5)
-]
 
-cinema.customers = {
-    "Денис": Customer("Денис", 19, 500.0),
-    "Саша": Customer("Саша", 14, 300.0),
-    "Макс": Customer("Макс", 16, 400.0)
-}
+def main() -> None:
+    showroom = Showroom("AutoCity")
+    garage = Garage(3)
+    mechanic = Mechanic("Іван")
+    dealer = Dealer("Олег", 20000)
 
-print("=== Фільми ===")
+    car1 = Car("BMW", "M5", 2020, 1500000, "Хороший")
+    car2 = Car("Audi", "RS7", 2021, 1800000, "Потребує ремонту")
+    car3 = Car("Toyota", "Camry", 2018, 700000, "Хороший")
+    car4 = Car("Mercedes", "E63", 2022, 2100000, "Хороший")
 
-for current_session in cinema.sessions:
-    current_session.movie.show()
-    print("Ціна квитка:", current_session.price, "грн")
+    car1.add_feature("Шкіряний салон")
+    car1.add_feature("Камера")
+    car2.add_feature("Повний привід")
+    car3.add_feature("Клімат-контроль")
+    car4.add_feature("Підігрів сидінь")
 
-    if current_session.movie.is_long():
-        print("Довгий фільм")
-    else:
-        print("Короткий фільм")
+    for car in [car1, car2, car3, car4]:
+        showroom.add_car(car)
 
-    print()
+    customer1 = Customer("Денис", 20, 2000000)
+    customer2 = Customer("Саша", 19, 900000)
+    customer3 = Customer("Макс", 17, 3000000)
+    customer4 = Customer("Артем", 25, 2500000)
 
-print("=== Клієнти ===")
+    customer1.add_favorite("BMW")
+    customer2.add_favorite("Toyota")
+    customer3.add_favorite("Mercedes")
+    customer4.add_favorite("Audi")
 
-for current_customer in cinema.customers.values():
-    current_customer.show()
+    showroom.show_cars()
 
-print("\n=== Покупки ===")
+    print("\n=== РЕМОНТ ===")
+    garage.add_car(car2)
+    garage.show_queue()
+    mechanic.repair(car2, garage)
 
-cinema.buy("Денис", 0)
-cinema.buy("Саша", 1)
-cinema.buy("Макс", 2)
+    print("\n=== ЗНИЖКИ ===")
+    car2.apply_discount(10)
 
-print("\n=== Квитки ===")
+    print("\n=== ПОКУПКИ ===")
 
-for current_ticket in cinema.tickets:
-    current_ticket.show()
+    orders = [
+        (car1, customer1),
+        (car3, customer2),
+        (car4, customer3),
+        (car2, customer4),
+        (car1, customer2),
+    ]
 
-print("\n=== Місця на Людину-павука ===")
-cinema.sessions[0].show_seats()
+    index = 0
 
-print("\n=== Місця на Шрека ===")
-cinema.sessions[1].show_seats()
+    while index < len(orders):
+        car, customer = orders[index]
+        showroom.sell_car(car, customer, dealer)
+        index += 1
 
-print("\n=== Місця на Джокера ===")
-cinema.sessions[2].show_seats()
+    print("\n=== КЛІЄНТИ ===")
 
-print("\n--- Звіт ---")
-cinema.report()
+    for customer in [customer1, customer2, customer3, customer4]:
+        customer.show_info()
+        print()
 
+    showroom.show_cars()
+
+    print("\n=== ПРАЦІВНИКИ ===")
+    dealer.show_info()
+    mechanic.show_info()
+
+    showroom.report()
+
+
+if __name__ == "__main__":
+    main()
